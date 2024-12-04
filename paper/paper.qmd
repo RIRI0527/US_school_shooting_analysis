@@ -65,13 +65,31 @@ The findings presented in this report highlight critical trends and disparities 
 
 ## Overview
 
-The dataset is from the wasington post [@washingtonpost_school_shootings].The data provides a data record of school shootings in the United States since 1999 to 2024, with the original data set consisting of 50 variables and 416 observations, which recorded when, where, and where they occurred in the data set. The racial proportion of the schools where the shootings took place and the gender of the shooters, among other variables. These variables provide detailed information about each school shooting. We will conduct statistical analysis on this data set and explore whether these factors affect the occurrence of school shooting.
+The dataset originates from the Washington Post [@washingtonpost_school_shootings] and spans 1999 to 2024, documenting school shootings in the United States. The raw dataset includes 416 observations and 50 variables, detailing information such as the time, location, racial demographics of schools, and shooter characteristics. This study extends the dataset by simulating additional observations to balance the binary outcome variable (shooting occurrence), resulting in a dataset with 830 observations and 31 variables. The dataset provides a robust basis for examining the predictors of school shootings, including temporal trends, demographic composition, and urbanicity.
 
 ## Measurement
 
-Measurement data is the process by which we turn events that happen in reality into visual data by collecting information, taking measurements, and so on.
-In this data, the Washington Post spent a year counting how many children were affected by the events of school shootings (not just the number of casualties).
-Reporters compiled this data through Nexis, news articles, open-source databases, law enforcement reports, information from school websites, and calls to schools and police departments [@washingtonpost_school_shootings] to compile this dataset.
+The dataset is a product of rigorous investigation by the Washington Post, combining diverse and credible sources to create a comprehensive record of school shootings from 1999 to the present [@washingtonpost_school_shootings]. Real-world incidents—where a gun was fired and at least one person was injured or killed on school property—were systematically transformed into structured data entries through a transparent and detailed process.
+
+### Data Sources and Process
+
+The measurement process involved triangulating information from:
+- **News Reports**: Verified through multiple outlets for accuracy.
+- **Law Enforcement Records**: Provided timelines, locations, and key details.
+- **School Data**: Publicly available records enriched the dataset with demographic and institutional contexts.
+
+Each incident was identified, verified, and contextualized to ensure accuracy. Variables such as school type, urban locale description, and racial composition were drawn from NCES data and school enrollment records, with additional details cross-referenced for completeness. Where gaps existed, synthetic data were carefully generated to maintain analytical consistency.
+
+
+### Strengths of the Dataset
+
+The dataset’s strengths lie in its:
+- **Comprehensiveness**: Captures a wide range of school shootings with detailed contexts.
+- **Transparency**: Relies on well-documented and publicly accessible sources.
+- **Relevance**: Includes key variables such as urbanicity and demographics critical to understanding school shootings.
+
+These qualities ensure that the dataset provides a reliable foundation for examining the complex factors contributing to school shootings.
+
 
 ## Data Cleaning
 
@@ -106,7 +124,7 @@ kable(summary_data,
                 position = "left")
 ```
 
-## Outcome variables
+## Data visualization
  
 ```{r}
 #| label: fig-school-type
@@ -129,7 +147,7 @@ ggplot(school_type_counts, aes(x = reorder(school_type, -Count), y = Count)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-The dataset reveals a notable disparity in the distribution of school types. As shown in @fig-school-type, public schools account for the vast majority of cases, while private schools are significantly underrepresented. This imbalance reflects the broader landscape of education in the United States, where public schools serve a larger student population. Moreover, this distribution is critical for our analysis, as it highlights the need to account for institutional differences when examining factors contributing to school shootings.
+The binary outcome variable indicates whether a school shooting occurred (1) or not (0). As shown in @fig-school-type, public schools dominate the dataset, reflecting their prominence in the U.S. educational landscape. Private schools are significantly underrepresented, necessitating careful modeling to account for this imbalance.
 
 ```{r}
 #| label: fig-ulocale
@@ -158,7 +176,7 @@ ggplot(filtered_data, aes(x = ulocale_desc, fill = ulocale_desc)) +
   )
 ```
 
-@fig-ulocale descriptions for schools with raw data highlights key geographic trends. As visualized in the bar chart, Suburb: Large and City: Large locales account for the majority of school shootings, reflecting the higher density of schools and populations in these areas. Smaller categories, such as Rural: Remote and Town: Fringe, are underrepresented, suggesting that sparsely populated regions experience fewer incidents. This pattern underscores the role of urbanicity in shaping exposure to risk factors like population density, socioeconomic conditions, and resource allocation. The findings emphasize the need for geographically tailored interventions, with a focus on urban and suburban areas that bear a disproportionate burden of school shootings. These insights can guide policymakers in targeting resources and preventive measures effectively.
+@fig-ulocale illustrates the distribution of urban locales for shootings, with **City: Large** and **Suburb: Large locales** representing the majority of incidents. Smaller locales, such as **Town: Fringe** and **Rural: Remote**, are underrepresented. This trend reflects the impact of population density and urbanicity on school shooting occurrences.
 
 ```{r}
 #| label: fig-state-map
@@ -228,7 +246,7 @@ ggplot(us_map_data, aes(x = long, y = lat, group = group, fill = occurrences)) +
   )
 ```
 
-The geographic distribution of school shootings across states is visualized in @fig-state-map. States such as California, Texas, and Florida exhibit higher frequencies of school shootings, reflecting their larger populations and more extensive school systems. Conversely, smaller states and those with lower populations, such as Wyoming and Vermont, report fewer incidents. This map underscores the importance of contextualizing school shootings within regional characteristics, including population size, school density, and state-specific policies.
+@fig-state-map maps the distribution of shootings across states, highlighting regions like California, Texas, and Florida as hotspots due to their large populations and extensive school systems.
 
 ```{r}
 #| label: fig-year
@@ -251,74 +269,86 @@ ggplot(year_counts, aes(x = as.numeric(as.character(Year)), y = Count)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-The temporal trend in school shootings is depicted in @fig-year, showing a concerning increase in incidents over the years. This upward trend highlights the growing urgency of addressing the factors contributing to school shootings. Spikes in certain years may correspond to specific events or policy changes, suggesting that temporal patterns warrant further investigation to understand their underlying causes. These findings emphasize the importance of considering temporal dynamics in any analysis of school shooting data.
+@fig-year depicts an alarming increase in school shootings over time. This trend emphasizes the urgency of understanding and mitigating factors contributing to these incidents.
 
-## Predictor variables
 
 # Model
 
-We use the `brms` package [@brms] and the `bayesplot` package [@bayesplot] to fit the model. 
-
-This analysis aimed to examine the relationship between school characteristics, demographic composition, and geographical location on the occurrence of school shootings.To achieve this, a Bayesian logistic regression model was employed. Logistic regression was deemed appropriate as the outcome variable (i.e., whether or not a school shooting occurred) is binary in nature. Bayesian methods were chosen to incorporate prior knowledge and provide probabilistic interpretations of the model parameters.
-
 ## Model set-up
 
-The Bayesian logistic regression model can be expressed as follows:
+To analyze the factors contributing to school shootings, we use a Bayesian logistic regression model. This approach is well-suited to modeling the binary outcome variable (whether a school shooting occurred) while incorporating prior knowledge about the predictors. The model is defined as:
 
-```{=tex}
 $$
 y_i \mid \pi_i \sim \text{Bernoulli}(\pi_i)
 $$
 
 $$
-\text{logit}(\pi_i) = \beta_0 + \beta_1 \cdot \text{year}_i + \beta_2 \cdot \text{school\_type}_i
+\text{logit}(\pi_i) = \beta_0 + \beta_1 \cdot \text{year}_i + \beta_2 \cdot \text{school\_type}_i + \beta_3 \cdot \text{ulocale\_desc}_i + \beta_4 \cdot \text{enrollment}_i + \beta_5 \cdot \text{top\_1\_races}_i
 $$
+
+where:
+
+- $y_i$: Binary response variable indicating whether a school shooting occurred (\(y_i = 1\)) or not (\(y_i = 0\)).
+
+- $\pi_i$: Probability of a school shooting for observation \(i\).
+
+- $\beta_k$: Coefficients representing the influence of predictors on the log-odds of a school shooting.
+
+### 3.2 Variables and Priors
+
+#### Predictors
+- **Year**: Captures temporal trends in shootings.
+- **School Type**: Public vs. private schools.
+- **Urban Locale**: Urbanicity levels from NCES data.
+- **Enrollment**: Total number of students in the school.
+- **Dominant Race**: Primary racial group in the school.
+
+#### Priors
+- Intercept $\beta_0\$: $\text{Normal}(0, 5)$, reflecting baseline uncertainty.
+- Coefficients $\beta_k$: $\text{Normal}(0, 2.5)$, allowing moderate variability.
+
+These priors prevent overfitting while allowing data-driven insights.
+
+
+
+
+## Results
+
+### Model Estimates
+
+Table @tbl-model-summary presents the Bayesian logistic regression coefficients, while Figure @fig-credible-intervals visualizes 90% credible intervals for the predictors.
+
+```{r tbl-model-summary, echo=FALSE, warning=FALSE, startup_message = FALSE}
+
+#| fig-cap: Bayesian Logistic Regression Coefficients
+
+# config_modelsummary(startup_message = FALSE)
+library(modelsummary)
+model <- readRDS(file = here::here("models/model_bayes.rds"))
+
+modelsummary(model, 
+             output = "kableExtra",
+             stars = FALSE,
+             statistic = "std.error",
+             title = "Bayesian Logistic Regression Coefficients")
 ```
-where: 
 
-- $y_i$: Occurrence of a school shooting (1 if a shooting occurred, 0 otherwise).
 
-- $\pi_i$: Probability of a school shooting occurring for observation $i$.
+Key findings include:
 
-- $\beta_0$: Intercept, representing the baseline log-odds of a school shooting for the reference categories of the predictors.
+\• Temporal Trends: Positive association with increasing years.
 
-- $\beta_1$, $\beta_2$, $\beta_3$, $\beta_4$: Effects of the predictors on the log-odds of a school shooting.
+\• School Type: Higher risk in public schools.
 
-**Priors**: 
+\• Urban Locale: Elevated risk in urban and suburban schools.
 
-- $\beta_0 \sim \text{Cauchy}(0, 2)$ (Intercept prior) 
+\• Enrollment: Modest increase in risk with larger enrollment.
 
-- $\beta_k \sim \text{Normal}(0, 10)$ for $k = 1, 2, 3, 4$ (Predictor priors)
+\•Dominant Race: Schools with predominantly White or Hispanic populations are at higher risk.
 
-## Model justification
+### Posterior Predictive Checks
 
-The inclusion of predictors was guided by theoretical considerations: 
-
-- **Year** ($\beta_1$): To assess temporal trends in school shootings, capturing whether incidents have increased or decreased over time.
-
-- **School Type** ($\beta_2$): To examine if public versus private schools are differently associated with the likelihood of school shootings.
-
-- **Dominant Race in the School Population** ($\beta_3$): To investigate the potential role of demographic composition in school shootings.
-
-- **Urbanicity** ($\beta_4$): To explore how geographical location and urban-rural classifications affect school shooting occurrences.
-
-Bayesian methods were used for their ability to incorporate prior knowledge and provide credible intervals for parameter estimates. Logistic regression was preferred as it ensures probabilities remain between 0 and 1, appropriate for binary outcomes.
-
-## Diagnostics and Visualizations
-
-To evaluate the model, several diagnostic tools and visualizations were utilized:
-
-1.  **Posterior Predictive Check** @fig-ppc was performed to compare the observed data with predictions from the model.
-2.  **Comparison of Posterior and Prior** @fig-posterior-vs-prior illustrates how the posterior distribution was updated from the priors.
-3.  **Trace Plots** @fig-trace-plots were used to check for MCMC convergence.
-4.  **Rhat Diagnostic Plot** @fig-rhat was used to ensure all parameters had converged ($\hat{R} < 1.1$).
-5.  **90% Credibility Intervals** @fig-credible-intervals display the uncertainty around the parameter estimates.
-
-These diagnostics confirmed good convergence and model fit, providing confidence in the estimated effects.
-
-# Results
-
-This section reports the findings from the Bayesian logistic regression model examining the likelihood of school shootings. Parameter estimates, convergence diagnostics, and the implications of the results are presented below.
+Figure @fig-ppc shows the posterior predictive checks (PPCs), which validate the model's fit by comparing observed and simulated data.
 
 ## Parameter Estimates
 
