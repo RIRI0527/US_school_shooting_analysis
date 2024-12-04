@@ -1,6 +1,6 @@
 ---
-title: ""
-subtitle: ""
+title: "Understanding School Shootings: Analyzing Trends, Demographics, and Geographic Factors Using Bayesian Methods"
+subtitle: "A Data-Driven Investigation into the Predictors of School Shootings in the United States (1999–2024)"
 author: 
   - Ruizi Liu
 thanks: "Code and data are available at: [https://github.com/RIRI0527/school_shooting_analysis.git](https://github.com/RIRI0527/school_shooting_analysis.git)."
@@ -75,7 +75,9 @@ Reporters compiled this data through Nexis, news articles, open-source databases
 
 ## Data Cleaning
 
-We used the`R`programming language [@citeR], the `dplyr` package[@R_dplyr], the `tidyr` package [@R_tidyr], the `maps` package [@R_maps], the `ggplot2` package [@R_ggplot2], and the`scale` package [@R_scales] to clean the data.
+We used the`R`programming language [@citeR], the `here` package [],
+the `dplyr` package [@R_dplyr], the `tidyr` package [@R_tidyr], the `maps` package [@R_maps], the `ggplot2` package [@R_ggplot2], and the`scale` package [@R_scales] to clean the data. We used the `tidyverse` package [@tidyverse], the `maps` package [@maps], the `ggplot2` package [@R_ggplot2], the `knitr` package [@knitr], the `kableExtra` package [@kableExtra] to plot the dataset and the visualization. 
+
 In doing so, R code was adapted from [@tellingstories].
 
 First we did some general cleaning of this dataset, including replacing NAs in the data with means and changing the form of dates in the data.In addition, because each school had different enrolments, we calculated the percentage of different ethnicities in each school and selected the highest percentage of ethnicities in each school.
@@ -86,9 +88,26 @@ Finally, we cleaned the dataset of some unnecessary variables, such as the name 
 
 In the end, we cleaned up the data to include 830 observations and 31 variables, the dataset can be find in @tbl-data-overview, only specific columns shows in the table. 
 
-## Outcome variables
-The dataset reveals a notable disparity in the distribution of school types. As shown in @fig-school-type, public schools account for the vast majority of cases, while private schools are significantly underrepresented. This imbalance reflects the broader landscape of education in the United States, where public schools serve a larger student population. Moreover, this distribution is critical for our analysis, as it highlights the need to account for institutional differences when examining factors contributing to school shootings. 
+```{r}
+#| label: tlb-data-overview
+#| tib-cap: The specific columns in the dataset
+#| echo: false
+#| warning: false
 
+# Subset the dataset for demonstration (first 10 rows and selected columns)
+summary_data <- data[1:10, c("year", "state", "school_type", "top_1_races", "ulocale_desc", "data_source", "school_shooting")]
+
+# Create the kable table
+kable(summary_data, 
+      col.names = c("Year", "State", "School Type", "Top 1 Race", "Ulocale", "Data Source", "School Shooting"),
+      caption = "Summary of School Shooting Data") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                position = "left")
+```
+
+## Outcome variables
+ 
 ```{r}
 #| label: fig-school-type
 #| fig-cap: Distribution of School Types
@@ -103,14 +122,14 @@ colnames(school_type_counts) <- c("school_type", "Count")
 # Create a bar plot
 ggplot(school_type_counts, aes(x = reorder(school_type, -Count), y = Count)) +
   geom_bar(stat = "identity", fill = "skyblue", color = "black") +
-  labs(title = "Distribution of School Types",
+  labs(
        x = "School Type",
        y = "Count") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-@fig-ulocale illustrates the distribution of urban locales where school shootings occurred. Large cities and large suburbs are overrepresented compared to smaller towns and remote rural areas. This trend aligns with population density and resource disparities, suggesting that urban schools may face heightened risks due to greater exposure to social and economic stressors. Understanding the geographic distribution of incidents provides essential context for identifying at-risk locations and tailoring preventive measures accordingly.
+The dataset reveals a notable disparity in the distribution of school types. As shown in @fig-school-type, public schools account for the vast majority of cases, while private schools are significantly underrepresented. This imbalance reflects the broader landscape of education in the United States, where public schools serve a larger student population. Moreover, this distribution is critical for our analysis, as it highlights the need to account for institutional differences when examining factors contributing to school shootings.
 
 ```{r}
 #| label: fig-ulocale
@@ -118,25 +137,28 @@ ggplot(school_type_counts, aes(x = reorder(school_type, -Count), y = Count)) +
 #| echo: false
 #| warning: false
 
-# Assuming your dataset is loaded into a data frame called 'data'
-# Count occurrences of each category in 'ulocale_desc'
-ulocale_counts <- as.data.frame(table(shooting_data$ulocale_desc))
+filtered_data <- data %>%
+  filter(data_source == "raw" & !is.na(ulocale_desc))
 
-# Rename the columns for clarity
-colnames(ulocale_counts) <- c("ulocale_desc", "Count")
-
-# Create a bar plot
-ggplot(ulocale_counts, aes(x = reorder(ulocale_desc, -Count), y = Count)) +
-  geom_bar(stat = "identity", fill = "steelblue", color = "black") +
-  labs(x = "Urban Locale Description",
-       y = "Count") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
+ggplot(filtered_data, aes(x = ulocale_desc, fill = ulocale_desc)) +
+  geom_bar() +
+  geom_text(stat = "count", 
+            aes(label = paste0(round(..count../sum(..count..) * 100, 1), "%")), 
+            vjust = -0.2, color = "black", size = 3.5) +
+  scale_fill_viridis_d(option = "D") + # Use a visually appealing viridis palette
+  labs(
+    x = "Urban Locale Description",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 12) + # Set base font size for overall consistency
+  theme(
+    legend.position = "none", # Remove legend
+    plot.title = element_text(face = "bold", hjust = 0.5), # Center-align title
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  )
 ```
 
-The geographic distribution of school shootings across states is visualized in @fig-state-map. States such as California, Texas, and Florida exhibit higher frequencies of school shootings, reflecting their larger populations and more extensive school systems. Conversely, smaller states and those with lower populations, such as Wyoming and Vermont, report fewer incidents. This map underscores the importance of contextualizing school shootings within regional characteristics, including population size, school density, and state-specific policies.
+@fig-ulocale descriptions for schools with raw data highlights key geographic trends. As visualized in the bar chart, Suburb: Large and City: Large locales account for the majority of school shootings, reflecting the higher density of schools and populations in these areas. Smaller categories, such as Rural: Remote and Town: Fringe, are underrepresented, suggesting that sparsely populated regions experience fewer incidents. This pattern underscores the role of urbanicity in shaping exposure to risk factors like population density, socioeconomic conditions, and resource allocation. The findings emphasize the need for geographically tailored interventions, with a focus on urban and suburban areas that bear a disproportionate burden of school shootings. These insights can guide policymakers in targeting resources and preventive measures effectively.
 
 ```{r}
 #| label: fig-state-map
@@ -206,7 +228,7 @@ ggplot(us_map_data, aes(x = long, y = lat, group = group, fill = occurrences)) +
   )
 ```
 
-The temporal trend in school shootings is depicted in @fig-year, showing a concerning increase in incidents over the years. This upward trend highlights the growing urgency of addressing the factors contributing to school shootings. Spikes in certain years may correspond to specific events or policy changes, suggesting that temporal patterns warrant further investigation to understand their underlying causes. These findings emphasize the importance of considering temporal dynamics in any analysis of school shooting data.
+The geographic distribution of school shootings across states is visualized in @fig-state-map. States such as California, Texas, and Florida exhibit higher frequencies of school shootings, reflecting their larger populations and more extensive school systems. Conversely, smaller states and those with lower populations, such as Wyoming and Vermont, report fewer incidents. This map underscores the importance of contextualizing school shootings within regional characteristics, including population size, school density, and state-specific policies.
 
 ```{r}
 #| label: fig-year
@@ -229,9 +251,13 @@ ggplot(year_counts, aes(x = as.numeric(as.character(Year)), y = Count)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+The temporal trend in school shootings is depicted in @fig-year, showing a concerning increase in incidents over the years. This upward trend highlights the growing urgency of addressing the factors contributing to school shootings. Spikes in certain years may correspond to specific events or policy changes, suggesting that temporal patterns warrant further investigation to understand their underlying causes. These findings emphasize the importance of considering temporal dynamics in any analysis of school shooting data.
+
 ## Predictor variables
 
 # Model
+
+We use the `brms` package [@brms] and the `bayesplot` package [@bayesplot] to fit the model. 
 
 This analysis aimed to examine the relationship between school characteristics, demographic composition, and geographical location on the occurrence of school shootings.To achieve this, a Bayesian logistic regression model was employed. Logistic regression was deemed appropriate as the outcome variable (i.e., whether or not a school shooting occurred) is binary in nature. Bayesian methods were chosen to incorporate prior knowledge and provide probabilistic interpretations of the model parameters.
 
@@ -420,9 +446,9 @@ knitr::kable(
 
 \newpage
 
-## Appendix
+# Appendix
 
-### A Additional Data Details
+## A Additional Data Details
 
 This analysis relied on data from the Washington Post dataset, which provides detailed records of school shootings in the United States from 1999 to 2024. To enhance the robustness of the model, synthetic data were generated for schools where shootings did not occur, following the methodology described in [Section 2.3](#data-cleaning). The inclusion of synthetic data allowed for a balanced dataset of 830 observations and 31 variables.
 
@@ -434,9 +460,9 @@ The data cleaning process included:
 
 @tbl-modelresults provides a summary of the cleaned dataset and key variables.
 
-### B Model Details
+## B Model Details
 
-#### B.1 Posterior Predictive Check
+### B.1 Posterior Predictive Check
 
 The posterior predictive check was performed to evaluate how well the model captures the observed data distribution. @fig-ppc demonstrates that the model predictions align closely with the observed data, indicating a good model fit.
 
@@ -452,7 +478,7 @@ pp_check(model, type = "dens_overlay") +
   theme(legend.position = "bottom")
 ```
 
-#### B.2 Diagnostics
+### B.2 Diagnostics
 
 To ensure the reliability of the Bayesian logistic regression model, the following diagnostics were conducted:
 1. **Trace Plots:** @fig-trace-plots shows well-mixed chains for all parameters, confirming convergence.
@@ -486,7 +512,7 @@ bayesplot::mcmc_rhat(rhat_vals) +
   theme_classic() +
   ggtitle("Rhat Diagnostic Plot")
 ```
-#### B.3 Comparison of Priors and Posteriors
+### B.3 Comparison of Priors and Posteriors
 
 @fig-posterior-vs-prior compares the posterior distributions with the priors, highlighting how the data influenced the parameter estimates.
 
@@ -503,28 +529,22 @@ mcmc_areas(as.array(model), pars = c("b_year", "b_school_typepublic", "b_ulocale
   theme_classic()
 ```
 
-### C Survey and Sampling Methodology
+## C Survey and Sampling Methodology
 
-#### C.1 Population, Frame, and Sample
+### C.1 Population, Frame, and Sample
 - **Population:** All K-12 schools in the United States.
 - **Frame:** Schools from the Washington Post dataset, combined with synthetic data for schools without shootings.
 - **Sample:** Stratified by school type, urban locale description, and dominant demographic group.
 
-#### C.2 Sampling and Recruitment
+### C.2 Sampling and Recruitment
 - Synthetic data were generated within observed variable ranges to represent schools where shootings did not occur.
 - Observed data were supplemented by demographic, geographic, and enrollment metrics.
 
-#### C.3 Questionnaire and Validation
+### C.3 Questionnaire and Validation
 - **Survey Focus:** School security measures, demographic composition, geographic details, and historical incidents.
 - **Validation:** Cross-referenced data with administrative records to ensure accuracy.
 
-### D Simulation Details
-
-To simulate the occurrence of school shootings, synthetic data were generated with random variability:
-- Geographic coordinates were adjusted within observed ranges.
-- Demographics and enrollment were assigned proportionally based on observed distributions.
-
-@fig-occurrence-map visualizes the geographic distribution of shooting occurrences, highlighting both observed and synthetic data points.
+## D Simulation Details
 
 ```{r}
 #| eval: true
@@ -551,13 +571,12 @@ ggplot() +
         axis.title = element_blank())
 
 ```
+To simulate the occurrence of school shootings, synthetic data were generated with random variability:
+- Geographic coordinates were adjusted within observed ranges.
+- Demographics and enrollment were assigned proportionally based on observed distributions.
 
-### E Implications of Results
-
-The analysis revealed the following key insights:
-1. **Temporal Trends:** The increasing trend in shootings over time (@fig-trend) underscores the need for immediate interventions.
-
-2. **Institutional and Demographic Context:** Public schools and urban locales were associated with higher risks, as shown in @fig-credible-intervals.
+@fig-occurrence-map visualizes the geographic distribution of shooting occurrences, highlighting both observed and synthetic data points.
+## E Implications of Results
 
 ```{r}
 #| eval: true
@@ -573,6 +592,10 @@ mcmc_intervals(as.array(model), pars = c("b_year", "b_school_typepublic", "b_ulo
 
 ```
 
+The analysis revealed the following key insights:
+1. **Temporal Trends:** The increasing trend in shootings over time (@fig-trend) underscores the need for immediate interventions.
+
+2. **Institutional and Demographic Context:** Public schools and urban locales were associated with higher risks, as shown in @fig-credible-intervals.
 These findings provide actionable insights for policymakers aiming to mitigate risks associated with school shootings.
 
 \newpage
