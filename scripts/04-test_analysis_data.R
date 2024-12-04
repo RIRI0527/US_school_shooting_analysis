@@ -1,69 +1,95 @@
 #### Preamble ####
-# Purpose: Tests... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 26 September 2024 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Tests the structure and validity of the analysis School Shooting dataset.
+# Author: Rohan Alexander
+# Date: 3 December 2024
+# Contact: ruizi.liu@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: 
+# - The `dplyr` package and `readr` package must be installed and loaded
+# Any other information needed? Make sure you are in the `school_shooting_analysis` rproj
+
 
 
 #### Workspace setup ####
-library(tidyverse)
-library(testthat)
+# Load necessary libraries
+library(dplyr)
+library(readr)
 
-data <- read_csv("data/02-analysis_data/analysis_data.csv")
+# Load the dataset
+analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
 
+# Test 1: Casualties Check - Ensure killed + injured equals casualties
+casualties_check <- analysis_data %>%
+  mutate(total_casualties = killed + injured) %>%
+  filter(total_casualties != casualties)
 
-#### Test data ####
-# Test that the dataset has 151 rows - there are 151 divisions in Australia
-test_that("dataset has 151 rows", {
-  expect_equal(nrow(analysis_data), 151)
-})
+if (nrow(casualties_check) > 0) {
+  print("Casualties check failed: Killed + Injured does not match Casualties.")
+  print(casualties_check)
+} else {
+  print("Casualties check passed: Killed + Injured matches Casualties.")
+}
 
-# Test that the dataset has 3 columns
-test_that("dataset has 3 columns", {
-  expect_equal(ncol(analysis_data), 3)
-})
+# Test 2: Demographic Proportions - Ensure all proportions are between 0 and 1
+proportion_columns <- c("white_proportion", "black_proportion", "hispanic_proportion",
+                        "asian_proportion", "american_indian_alaska_native_proportion",
+                        "hawaiian_native_pacific_islander_proportion", "two_or_more_proportion")
 
-# Test that the 'division' column is character type
-test_that("'division' is character", {
-  expect_type(analysis_data$division, "character")
-})
+proportion_check <- analysis_data %>%
+  filter(across(all_of(proportion_columns), ~ . < 0 | . > 1))
 
-# Test that the 'party' column is character type
-test_that("'party' is character", {
-  expect_type(analysis_data$party, "character")
-})
+if (nrow(proportion_check) > 0) {
+  print("Proportion check failed: Some proportions are out of the valid range (0-1).")
+  print(proportion_check)
+} else {
+  print("Proportion check passed: All proportions are within the valid range.")
+}
 
-# Test that the 'state' column is character type
-test_that("'state' is character", {
-  expect_type(analysis_data$state, "character")
-})
+# Test 3: Top Race Validation - Verify that `top_1_races` is consistent with demographic proportions
+top_race_validation <- analysis_data %>%
+  mutate(max_proportion = pmax(white_proportion, black_proportion, hispanic_proportion,
+                               asian_proportion, american_indian_alaska_native_proportion,
+                               hawaiian_native_pacific_islander_proportion, two_or_more_proportion),
+         inferred_race = case_when(
+           max_proportion == white_proportion ~ "white",
+           max_proportion == black_proportion ~ "black",
+           max_proportion == hispanic_proportion ~ "hispanic",
+           max_proportion == asian_proportion ~ "asian",
+           max_proportion == american_indian_alaska_native_proportion ~ "american_indian_alaska_native",
+           max_proportion == hawaiian_native_pacific_islander_proportion ~ "hawaiian_native_pacific_islander",
+           max_proportion == two_or_more_proportion ~ "two_or_more",
+           TRUE ~ "unknown"
+         )) %>%
+  filter(top_1_races != inferred_race)
 
-# Test that there are no missing values in the dataset
-test_that("no missing values in dataset", {
-  expect_true(all(!is.na(analysis_data)))
-})
+if (nrow(top_race_validation) > 0) {
+  print("Top race validation failed: Inconsistent top race inference.")
+  print(top_race_validation)
+} else {
+  print("Top race validation passed: Top race matches proportions.")
+}
 
-# Test that 'division' contains unique values (no duplicates)
-test_that("'division' column contains unique values", {
-  expect_equal(length(unique(analysis_data$division)), 151)
-})
+# Test 4: Unique Identifiers - Check if a combination of year, state, and school_type uniquely identifies rows
+unique_identifier_check <- analysis_data %>%
+  group_by(year, state, school_type) %>%
+  filter(n() > 1)
 
-# Test that 'state' contains only valid Australian state or territory names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", "Western Australia", 
-                  "Tasmania", "Northern Territory", "Australian Capital Territory")
-test_that("'state' contains valid Australian state names", {
-  expect_true(all(analysis_data$state %in% valid_states))
-})
+if (nrow(unique_identifier_check) > 0) {
+  print("Unique identifier check failed: Duplicate rows detected for (year, state, school_type).")
+  print(unique_identifier_check)
+} else {
+  print("Unique identifier check passed: No duplicate rows.")
+}
 
-# Test that there are no empty strings in 'division', 'party', or 'state' columns
-test_that("no empty strings in 'division', 'party', or 'state' columns", {
-  expect_false(any(analysis_data$division == "" | analysis_data$party == "" | analysis_data$state == ""))
-})
+# Test 5: Locale Descriptions - Validate ulocale_desc values
+valid_locale_desc <- c("Suburb: Large", "City: Mid-size", "City: Large", "Town: Small", "Other") # Example valid values
+locale_check <- analysis_data %>%
+  filter(!ulocale_desc %in% valid_locale_desc)
 
-# Test that the 'party' column contains at least 2 unique values
-test_that("'party' column contains at least 2 unique values", {
-  expect_true(length(unique(analysis_data$party)) >= 2)
-})
+if (nrow(locale_check) > 0) {
+  print("Locale validation failed: Invalid ulocale_desc values.")
+  print(locale_check)
+} else {
+  print("Locale validation passed: All ulocale_desc values are valid.")
+}
+

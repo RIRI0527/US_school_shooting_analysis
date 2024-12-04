@@ -1,89 +1,81 @@
 #### Preamble ####
-# Purpose: Tests the structure and validity of the simulated Australian 
-  #electoral divisions dataset.
+# Purpose: Tests the structure and validity of the simulated School Shooting dataset.
 # Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Date: 3 December 2024
+# Contact: ruizi.liu@mail.utoronto.ca
 # License: MIT
 # Pre-requisites: 
-  # - The `tidyverse` package must be installed and loaded
+  # - The `dplyr` package and `readr` package must be installed and loaded
   # - 00-simulate_data.R must have been run
-# Any other information needed? Make sure you are in the `starter_folder` rproj
+# Any other information needed? Make sure you are in the `school_shooting_analysis` rproj
 
 
 #### Workspace setup ####
-library(tidyverse)
+# Load necessary libraries
+library(dplyr)
+library(readr)
 
-analysis_data <- read_csv("data/00-simulated_data/simulated_data.csv")
+# Load the dataset
+data <- read_csv(here::here("data/00-simulated_data/simulated_data.csv"))
 
-# Test if the data was successfully loaded
-if (exists("analysis_data")) {
-  message("Test Passed: The dataset was successfully loaded.")
+# Test 1: Logical Integrity - Ensure killed + injured == casualties
+logical_integrity <- data %>%
+  mutate(total_casualties = killed + injured) %>%
+  filter(total_casualties != casualties)
+
+if (nrow(logical_integrity) > 0) {
+  print("Logical integrity test failed: Mismatch in casualties.")
+  print(logical_integrity)
 } else {
-  stop("Test Failed: The dataset could not be loaded.")
+  print("Logical integrity test passed: Casualties match.")
 }
 
+# Test 2: Demographic Validation - Sum of demographic groups equals enrollment
+demographic_validation <- data %>%
+  mutate(demo_sum = white + black + hispanic + asian) %>%
+  filter(demo_sum != enrollment)
 
-#### Test data ####
-
-# Check if the dataset has 151 rows
-if (nrow(analysis_data) == 151) {
-  message("Test Passed: The dataset has 151 rows.")
+if (nrow(demographic_validation) > 0) {
+  print("Demographic validation test failed: Enrollment does not match demographic sum.")
+  print(demographic_validation)
 } else {
-  stop("Test Failed: The dataset does not have 151 rows.")
+  print("Demographic validation test passed: Enrollment matches demographic sum.")
 }
 
-# Check if the dataset has 3 columns
-if (ncol(analysis_data) == 3) {
-  message("Test Passed: The dataset has 3 columns.")
+# Test 3: Proportions - Validate proportions are between 0 and 1
+proportion_validation <- data %>%
+  filter(white_proportion < 0 | white_proportion > 1 |
+           black_proportion < 0 | black_proportion > 1 |
+           hispanic_proportion < 0 | hispanic_proportion > 1)
+
+if (nrow(proportion_validation) > 0) {
+  print("Proportion test failed: Proportions out of bounds.")
+  print(proportion_validation)
 } else {
-  stop("Test Failed: The dataset does not have 3 columns.")
+  print("Proportion test passed: All proportions are valid.")
 }
 
-# Check if all values in the 'division' column are unique
-if (n_distinct(analysis_data$division) == nrow(analysis_data)) {
-  message("Test Passed: All values in 'division' are unique.")
+# Test 4: Duplicates - Check for duplicate rows
+duplicate_rows <- data %>%
+  group_by_all() %>%
+  filter(n() > 1)
+
+if (nrow(duplicate_rows) > 0) {
+  print("Duplicate test failed: Duplicate rows found.")
+  print(duplicate_rows)
 } else {
-  stop("Test Failed: The 'division' column contains duplicate values.")
+  print("Duplicate test passed: No duplicate rows.")
 }
 
-# Check if the 'state' column contains only valid Australian state names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", 
-                  "Western Australia", "Tasmania", "Northern Territory", 
-                  "Australian Capital Territory")
+# Test 5: Locale Consistency - Check for valid values in ulocale_desc
+valid_locales <- c("Town: Distant", "City: Small", "City: Large", "Other") # Example valid values
+locale_validation <- data %>%
+  filter(!ulocale_desc %in% valid_locales)
 
-if (all(analysis_data$state %in% valid_states)) {
-  message("Test Passed: The 'state' column contains only valid Australian state names.")
+if (nrow(locale_validation) > 0) {
+  print("Locale validation test failed: Invalid ulocale_desc values found.")
+  print(locale_validation)
 } else {
-  stop("Test Failed: The 'state' column contains invalid state names.")
+  print("Locale validation test passed: All ulocale_desc values are valid.")
 }
 
-# Check if the 'party' column contains only valid party names
-valid_parties <- c("Labor", "Liberal", "Greens", "National", "Other")
-
-if (all(analysis_data$party %in% valid_parties)) {
-  message("Test Passed: The 'party' column contains only valid party names.")
-} else {
-  stop("Test Failed: The 'party' column contains invalid party names.")
-}
-
-# Check if there are any missing values in the dataset
-if (all(!is.na(analysis_data))) {
-  message("Test Passed: The dataset contains no missing values.")
-} else {
-  stop("Test Failed: The dataset contains missing values.")
-}
-
-# Check if there are no empty strings in 'division', 'state', and 'party' columns
-if (all(analysis_data$division != "" & analysis_data$state != "" & analysis_data$party != "")) {
-  message("Test Passed: There are no empty strings in 'division', 'state', or 'party'.")
-} else {
-  stop("Test Failed: There are empty strings in one or more columns.")
-}
-
-# Check if the 'party' column has at least two unique values
-if (n_distinct(analysis_data$party) >= 2) {
-  message("Test Passed: The 'party' column contains at least two unique values.")
-} else {
-  stop("Test Failed: The 'party' column contains less than two unique values.")
-}
