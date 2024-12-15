@@ -8,24 +8,13 @@ date: today
 date-format: long
 abstract: "School shootings remain a critical issue in the United States, with far-reaching social and psychological consequences. This study investigates the factors influencing the occurrence of school shootings, focusing on temporal trends, school type, demographic composition, and geographic context. Using a Bayesian logistic regression model, this analysis incorporates both observed and simulated data to explore the relationship between these predictors and the likelihood of a shooting. The results reveal significant associations between the predictors and school shootings. Temporal trends indicate an alarming increase in incidents over time, while public schools and urban locales exhibit higher risks compared to private schools and rural areas. Demographic composition also plays a role, with schools characterized by specific racial majorities showing distinct patterns in the likelihood of shootings. This report emphasizes the need for targeted, data-driven interventions that consider institutional and geographic variations in risk. By leveraging probabilistic modeling, this study provides actionable insights for policymakers aiming to mitigate the occurrence of school shootings and improve the safety of educational environments across the United States. "
 format: pdf
+prefer-html: true
 number-sections: true
 bibliography: references.bib
 editor: 
   markdown: 
     wrap: sentence
 ---
-
-```{r}
-#| include: false
-#### Installing the packages ####
-required_packages <- c("tidyverse", "here", "maps")
-for (p in required_packages) {
-  if (!require(p, character.only = TRUE)) {
-    install.packages(p, dependencies = TRUE)
-    library(p, character.only = TRUE)
-  }
-}
-```
 
 ```{r}
 #| include: false
@@ -74,8 +63,11 @@ The dataset is a product of rigorous investigation by the Washington Post, combi
 ### Data Sources and Process
 
 The measurement process involved triangulating information from:
+
 - **News Reports**: Verified through multiple outlets for accuracy.
+
 - **Law Enforcement Records**: Provided timelines, locations, and key details.
+
 - **School Data**: Publicly available records enriched the dataset with demographic and institutional contexts.
 
 Each incident was identified, verified, and contextualized to ensure accuracy. Variables such as school type, urban locale description, and racial composition were drawn from NCES data and school enrollment records, with additional details cross-referenced for completeness. Where gaps existed, synthetic data were carefully generated to maintain analytical consistency.
@@ -84,8 +76,11 @@ Each incident was identified, verified, and contextualized to ensure accuracy. V
 ### Strengths of the Dataset
 
 The dataset’s strengths lie in its:
+
 - **Comprehensiveness**: Captures a wide range of school shootings with detailed contexts.
+
 - **Transparency**: Relies on well-documented and publicly accessible sources.
+
 - **Relevance**: Includes key variables such as urbanicity and demographics critical to understanding school shootings.
 
 These qualities ensure that the dataset provides a reliable foundation for examining the complex factors contributing to school shootings.
@@ -93,35 +88,37 @@ These qualities ensure that the dataset provides a reliable foundation for exami
 
 ## Data Cleaning
 
-We used the`R`programming language [@citeR], the `here` package [],
-the `dplyr` package [@R_dplyr], the `tidyr` package [@R_tidyr], the `maps` package [@R_maps], the `ggplot2` package [@R_ggplot2], and the`scale` package [@R_scales] to clean the data. We used the `tidyverse` package [@tidyverse], the `maps` package [@maps], the `ggplot2` package [@R_ggplot2], the `knitr` package [@knitr], the `kableExtra` package [@kableExtra] to plot the dataset and the visualization. 
+We used the`R`programming language [@citeR], the `here` package [@here],the `dplyr` package [@R_dplyr], the `tidyr` package [@R_tidyr], the `maps` package [@R_maps], the `ggplot2` package [@R_ggplot2], and the`scale` package [@R_scales] to clean the data. We used the `tidyverse` package [@tidyverse], the `maps` package [@maps], the `ggplot2` package [@R_ggplot2], the `knitr` package [@knitr], the `kableExtra` package [@kableExtra] to plot the dataset and the visualization. 
 
 In doing so, R code was adapted from [@tellingstories].
 
 First we did some general cleaning of this dataset, including replacing NAs in the data with means and changing the form of dates in the data.In addition, because each school had different enrolments, we calculated the percentage of different ethnicities in each school and selected the highest percentage of ethnicities in each school.
 
-In addition, because the original data only recorded the shootings that occurred and not the ones that did not, but we wanted to simulate the logistic regression model, we generated synthetic data based on the cleaned dataset to reflect the data that did not occur. The main components that were simulated were latitude, longitude, school ethnicity, lunch, and staffing, and to ensure that the data were reasonable, the synthetic data were generated within the allowable range of variability (a reasonable float between the maximum and minimum of the variable), and to ensure that the model was implementable, the synthetic data were generated within the allowable range of variation.Synthetic data and raw data both have 415 observations.at the same time, we made a distinction between synthetic data and raw data inside the dataset by labelling their data source in data_source and creating a new binary variable to indicate whether a shooting occurred or not.
+In addition, because the original data only recorded the shootings that occurred and not the ones that did not, but we wanted to simulate the logistic regression model, we generated synthetic data based on the cleaned dataset to reflect the data that did not occur. The main components that were simulated were latitude, longitude, school ethnicity, lunch, and staffing, and to ensure that the data were reasonable, the synthetic data were generated within the allowable range of variability (a reasonable float between the maximum and minimum of the variable), and to ensure that the model was implementable, the synthetic data were generated within the allowable range of variation.Synthetic data and raw data both have 415 observations.at the same time, we made a distinction between synthetic data and raw data inside the datasets by labeling their data source in data_source and creating a new binary variable to indicate whether a shooting occurred or not.
 
 Finally, we cleaned the dataset of some unnecessary variables, such as the name and id of the school, the specific city neighbourhoods where the shootings took place (we focused our analysis on those states specifically), the shooter's access to the gun, and so on.
 
 In the end, we cleaned up the data to include 830 observations and 31 variables, the dataset can be find in @tbl-data-overview, only specific columns shows in the table. 
 
 ```{r}
-#| label: tlb-data-overview
-#| tib-cap: The specific columns in the dataset
+#| label: tbl-data-overview
+#| tbl-cap: The selected columns in the dataset
 #| echo: false
 #| warning: false
 
 # Subset the dataset for demonstration (first 10 rows and selected columns)
 summary_data <- data[1:10, c("year", "state", "school_type", "top_1_races", "ulocale_desc", "data_source", "school_shooting")]
 
-# Create the kable table
-kable(summary_data, 
-      col.names = c("Year", "State", "School Type", "Top 1 Race", "Ulocale", "Data Source", "School Shooting"),
-      caption = "Summary of School Shooting Data") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                position = "left")
+#### Generate the data table ####
+summary_data %>%
+  head(10) %>%
+  kable(
+    format = "html",
+    caption = "Summary of School Shooting Data",
+    col.names = c("Year", "State", "School Type", "Top 1 Race", "Ulocale", "Data Source", "School Shooting")  # Ensure this matches column count
+  ) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  column_spec(1, bold = TRUE, color = "blue")
 ```
 
 ## Data visualization
@@ -297,14 +294,19 @@ where:
 ### 3.2 Variables and Priors
 
 #### Predictors
+
 - **Year**: Captures temporal trends in shootings.
+
 - **School Type**: Public vs. private schools.
+
 - **Urban Locale**: Urbanicity levels from NCES data.
+
 - **Enrollment**: Total number of students in the school.
+
 - **Dominant Race**: Primary racial group in the school.
 
 #### Priors
-- Intercept $\beta_0\$: $\text{Normal}(0, 5)$, reflecting baseline uncertainty.
+- Intercept $\beta_0$: $\text{Normal}(0, 5)$, reflecting baseline uncertainty.
 - Coefficients $\beta_k$: $\text{Normal}(0, 2.5)$, allowing moderate variability.
 
 These priors prevent overfitting while allowing data-driven insights.
@@ -319,18 +321,23 @@ These priors prevent overfitting while allowing data-driven insights.
 Table @tbl-model-summary presents the Bayesian logistic regression coefficients, while Figure @fig-credible-intervals visualizes 90% credible intervals for the predictors.
 
 ```{r tbl-model-summary, echo=FALSE, warning=FALSE, startup_message = FALSE}
+#| tbl-cap: "Bayesian Logistic Regression Coefficients"
+#| label: tbl-model-summary
 
-#| fig-cap: Bayesian Logistic Regression Coefficients
-
-# config_modelsummary(startup_message = FALSE)
 library(modelsummary)
+
+# Load the model
 model <- readRDS(file = here::here("models/model_bayes.rds"))
 
-modelsummary(model, 
-             output = "kableExtra",
-             stars = FALSE,
-             statistic = "std.error",
-             title = "Bayesian Logistic Regression Coefficients")
+# Render the model summary as a LaTeX-compatible table
+modelsummary(
+  model, 
+  output = "latex",
+  stars = FALSE,
+  statistic = "std.error",
+  title = "Bayesian Logistic Regression Coefficients"
+)
+
 ```
 
 
@@ -370,16 +377,15 @@ The results highlight several significant effects:
 These findings suggest temporal, institutional, demographic, and geographic factors all contribute to the likelihood of school shootings.
 
 ## Diagnostics
-
 Model diagnostics confirmed the robustness of the Bayesian logistic regression.
 
 Key diagnostic plots include:
 
-1.  **Posterior Predictive Check** @fig-ppc: The posterior predictive distribution aligns closely with the observed data, indicating a good model fit.
+1.  **Posterior Predictive Check** [@fig-ppc]: The posterior predictive distribution aligns closely with the observed data, indicating a good model fit.
 
-2.  **Convergence**: @fig-trace-plots displays trace plots for key parameters, showing well-mixed chains that reached stationarity. All parameters had ($\hat{R} < 1.1$), as shown in @fig-rhat.
+2.  **Convergence** [@fig-trace-plots]: displays trace plots for key parameters, showing well-mixed chains that reached stationarity. All parameters had ($\hat{R} < 1.1$), as shown in @fig-rhat.
 
-3.  **Credibility Intervals** @fig-credible-intervals: The $90%$ credibility intervals for each parameter are plotted, highlighting significant predictors (intervals that exclude 0).
+3.  **Credibility Intervals** [@fig-credible-intervals]: The $90%$ credibility intervals for each parameter are plotted, highlighting significant predictors (intervals that exclude 0).
 
 These diagnostics provide strong evidence of model convergence and fit, supporting the reliability of the results.
 
