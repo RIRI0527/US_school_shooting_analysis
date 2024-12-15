@@ -1,4 +1,4 @@
-# School Shooting Analysis
+# US School Shooting Analysis
 
 ## Overview
 
