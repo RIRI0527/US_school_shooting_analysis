@@ -91,7 +91,7 @@ These qualities ensure that the dataset provides a reliable foundation for exami
 
 ## Data Cleaning
 
-We used the`R`programming language [@citeR], the `here` package [@here],the `dplyr` package [@R_dplyr], the `tidyr` package [@R_tidyr], the `maps` package [@R_maps], the `ggplot2` package [@R_ggplot2], and the`scale` package [@R_scales] to clean the data. We used the `tidyverse` package [@tidyverse], the `maps` package [@maps], the `ggplot2` package [@R_ggplot2], the `knitr` package [@knitr], the `kableExtra` package [@kableExtra] to plot the dataset and the visualization. 
+We used the`R`programming language [@citeR], the `arrow` package [@parquet] to save and read the data, the `here` package [@here],the `dplyr` package [@R_dplyr], the `tidyr` package [@R_tidyr], the `maps` package [@R_maps], the `ggplot2` package [@R_ggplot2], and the`scale` package [@R_scales] to clean the data. We used the `tidyverse` package [@tidyverse], the `maps` package [@maps], the `ggplot2` package [@R_ggplot2], the `knitr` package [@knitr], the `kableExtra` package [@kableExtra] to plot the dataset and the visualization. 
 
 In doing so, R code was adapted from [@tellingstories].
 
