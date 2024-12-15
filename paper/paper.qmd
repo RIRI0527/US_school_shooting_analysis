@@ -29,13 +29,16 @@ library(brms)
 library(bayesplot)
 library(knitr)
 library(kableExtra)
+library(arrow)
 ```
 
 ```{r}
 #| include: false
 
+library(arrow)
+
 #### Loading the dataset ####
-data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
+data <- read_parquet(here::here("data/02-analysis_data/analysis_data.parquet"))
 shooting_data <- data %>%
   filter(data_source == "raw")
 non_shooting_data <-data %>%
@@ -312,8 +315,6 @@ where:
 These priors prevent overfitting while allowing data-driven insights.
 
 
-
-
 ## Results
 
 ### Model Estimates
@@ -517,7 +518,9 @@ pp_check(model, type = "dens_overlay") +
 ### B.2 Diagnostics
 
 To ensure the reliability of the Bayesian logistic regression model, the following diagnostics were conducted:
+
 1. **Trace Plots:** @fig-trace-plots shows well-mixed chains for all parameters, confirming convergence.
+
 2. **Rhat Plot:** @fig-rhat illustrates that all parameters have $\hat{R} \leq 1.1$, indicating no convergence issues.
 
 ```{r}
@@ -569,15 +572,19 @@ mcmc_areas(as.array(model), pars = c("b_year", "b_school_typepublic", "b_ulocale
 
 ### C.1 Population, Frame, and Sample
 - **Population:** All K-12 schools in the United States.
+
 - **Frame:** Schools from the Washington Post dataset, combined with synthetic data for schools without shootings.
+
 - **Sample:** Stratified by school type, urban locale description, and dominant demographic group.
 
 ### C.2 Sampling and Recruitment
 - Synthetic data were generated within observed variable ranges to represent schools where shootings did not occur.
+
 - Observed data were supplemented by demographic, geographic, and enrollment metrics.
 
 ### C.3 Questionnaire and Validation
 - **Survey Focus:** School security measures, demographic composition, geographic details, and historical incidents.
+
 - **Validation:** Cross-referenced data with administrative records to ensure accuracy.
 
 ## D Simulation Details
@@ -608,10 +615,13 @@ ggplot() +
 
 ```
 To simulate the occurrence of school shootings, synthetic data were generated with random variability:
+
 - Geographic coordinates were adjusted within observed ranges.
+
 - Demographics and enrollment were assigned proportionally based on observed distributions.
 
 @fig-occurrence-map visualizes the geographic distribution of shooting occurrences, highlighting both observed and synthetic data points.
+
 ## E Implications of Results
 
 ```{r}
@@ -628,10 +638,42 @@ mcmc_intervals(as.array(model), pars = c("b_year", "b_school_typepublic", "b_ulo
 
 ```
 
+
+
+```{r}
+#| eval: true
+#| echo: false
+#| warning: false
+#| label: fig-trend
+#| fig-cap: "Tempotal Trend of School Shootings"
+
+# Aggregate the number of shootings by year
+trend_data <- shooting_data %>%
+  group_by(year) %>%
+  summarise(count = n())
+
+# Create the temporal trend plot
+ggplot(trend_data, aes(x = year, y = count)) +
+  geom_line(color = "orange", size = 1) +
+  geom_point(color = "orange", size = 2) +
+  labs(
+    x = "Year",
+    y = "Number of Shootings"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
 The analysis revealed the following key insights:
+
 1. **Temporal Trends:** The increasing trend in shootings over time (@fig-trend) underscores the need for immediate interventions.
 
 2. **Institutional and Demographic Context:** Public schools and urban locales were associated with higher risks, as shown in @fig-credible-intervals.
+
 These findings provide actionable insights for policymakers aiming to mitigate risks associated with school shootings.
 
 \newpage
