@@ -13,6 +13,7 @@ library(tidyr)
 library(maps)
 library(ggplot2)
 library(scales)
+library(arrow)
 
 #### Load the dataset ####
 raw_data <- read.csv(here::here("data/01-raw_data/raw_data.csv"))
@@ -259,6 +260,6 @@ balanced_data$top_1_races <- apply(balanced_data[race_columns], 1, top_1_races)
 
 
 #### Save Updated balanced_data ####
-write.csv(balanced_data, here::here("data/02-analysis_data/analysis_data.csv"), row.names = FALSE)
+write_parquet(balanced_data, here::here("data/02-analysis_data/analysis_data.parquet"))
 
 
